@@ -1,0 +1,1116 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>J.Law GEMINI Travel Planner</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- html2pdf.js for PDF Export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <!-- SheetJS for Excel Export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .star-rating { color: #f59e0b; }
+        .custom-scrollbar::-webkit-scrollbar { height: 8px; width: 8px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen pb-12">
+
+    <!-- Header -->
+    <header class="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div class="bg-white/20 p-3 rounded-2xl backdrop-blur-md">
+                        <i class="fa-solid font-bold fa-plane-departure text-2xl text-white"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-2xl font-bold tracking-tight">J.Law GEMINI Travel Planner</h1>
+                        <p class="text-xs text-blue-100 mt-0.5">Powered by Gemini 3 Flash & Google Search Grounding</p>
+                    </div>
+                </div>
+                <div class="hidden sm:flex items-center space-x-2 text-xs bg-white/10 px-3 py-1.5 rounded-full border border-white/20">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span>智能即時檢索模式</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
+        
+        <!-- Form Section Card -->
+        <section class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-6 sm:p-8 mb-8">
+            <h2 class="text-lg font-bold text-slate-900 mb-6 flex items-center gap-2 border-b pb-4 border-slate-100">
+                <i class="fa-solid fa-sliders text-blue-600"></i> 行程參數設定
+            </h2>
+
+            <form id="plannerForm" onsubmit="handlePlanSubmit(event)">
+                
+                <!-- Flight & Route Info Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
+                    <!-- Departure -->
+                    <div class="space-y-2 col-span-1 md:col-span-1 xl:col-span-2">
+                        <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider">去程地點與時間</label>
+                        <input type="text" id="depLocation" value="香港 (HKG)" class="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white transition" placeholder="去程地點" required>
+                        <div class="grid grid-cols-2 gap-2 mt-2">
+                            <input type="date" id="depDate" class="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500" required>
+                            <input type="time" id="depTime" value="09:15" class="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500" required>
+                        </div>
+                    </div>
+
+                    <!-- Transit Stop 1 -->
+                    <div class="space-y-2 col-span-1 md:col-span-1">
+                        <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider">經停地點 1 <span class="text-slate-400 font-normal">(選填)</span></label>
+                        <input type="text" id="viaLocation1" class="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white transition" placeholder="例如：箱根 / 河口湖">
+                        <p class="text-[11px] text-slate-400">中途停留點/觀光城市</p>
+                    </div>
+
+                    <!-- Transit Stop 2 -->
+                    <div class="space-y-2 col-span-1 md:col-span-1">
+                        <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider">經停地點 2 <span class="text-slate-400 font-normal">(選填)</span></label>
+                        <input type="text" id="viaLocation2" class="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white transition" placeholder="例如：橫濱 / 輕井澤">
+                        <p class="text-[11px] text-slate-400">第二中途點</p>
+                    </div>
+
+                    <!-- Return -->
+                    <div class="space-y-2 col-span-1 md:col-span-1 xl:col-span-2">
+                        <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider">回程地點與時間</label>
+                        <input type="text" id="arrLocation" value="日本東京 (NRT/HND)" class="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white transition" placeholder="目的地" required>
+                        <div class="grid grid-cols-2 gap-2 mt-2">
+                            <input type="date" id="retDate" class="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500" required>
+                            <input type="time" id="retTime" value="18:30" class="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500" required>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Flight Hours & Group Details Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <!-- Flight Duration -->
+                    <div class="space-y-2">
+                        <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider">單程飛行時間 (小時)</label>
+                        <div class="relative">
+                            <input type="number" id="flightHours" step="0.5" min="0.5" value="4.5" class="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white transition" required>
+                            <span class="absolute right-3 top-2.5 text-xs text-slate-400">小時</span>
+                        </div>
+                        <p class="text-[11px] text-slate-400 mt-1">例如：香港往東京約 4.5 小時</p>
+                    </div>
+
+                    <!-- Group Breakdown -->
+                    <div class="space-y-2">
+                        <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider">團員結構 (人數)</label>
+                        <div class="grid grid-cols-3 gap-2">
+                            <div>
+                                <span class="text-[10px] text-slate-500 block mb-1">成人</span>
+                                <input type="number" id="numAdults" min="1" value="2" class="w-full px-2.5 py-2 text-center text-xs bg-slate-50 border border-slate-200 rounded-lg">
+                            </div>
+                            <div>
+                                <span class="text-[10px] text-slate-500 block mb-1">兒童</span>
+                                <input type="number" id="numKids" min="0" value="1" class="w-full px-2.5 py-2 text-center text-xs bg-slate-50 border border-slate-200 rounded-lg">
+                            </div>
+                            <div>
+                                <span class="text-[10px] text-slate-500 block mb-1">長者</span>
+                                <input type="number" id="numElderly" min="0" value="1" class="w-full px-2.5 py-2 text-center text-xs bg-slate-50 border border-slate-200 rounded-lg">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Relationship, Purpose & Budget Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4 border-t border-slate-100">
+                    <!-- Group Relation -->
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-2">團員關係</label>
+                        <select id="groupRelation" class="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500">
+                            <option value="家人" selected>家人 (含長輩/小朋友)</option>
+                            <option value="朋友">朋友 / 閨蜜</option>
+                            <option value="情侶">情侶 / 夫妻</option>
+                            <option value="同事">同事 / 工作伙伴</option>
+                        </select>
+                    </div>
+
+                    <!-- Travel Purpose -->
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-2">旅行目的</label>
+                        <select id="travelPurpose" class="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500">
+                            <option value="綜合 (購物+觀光+美食)">綜合 (觀光+購物+美食均衡)</option>
+                            <option value="主力購物">主力購物 (商場/ Outlet/ 潮流區)</option>
+                            <option value="主力觀光">主力觀光 (地標/ 自然風景/ 文化)</option>
+                            <option value="休閒放鬆">休閒放鬆 (溫泉/ 慢活/ 酒店渡假)</option>
+                            <option value="自駕遊 (租車/彈性行程)">自駕遊 (探索秘境/彈性行程)</option>
+                            <option value="獨遊 (隨心探索/獨處時光/一人食)">獨遊 (隨心探索/獨處時光/一人食)</option>
+                        </select>
+                    </div>
+
+                    <!-- Budget -->
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-2">預算定位 (Budget)</label>
+                        <select id="travelBudget" class="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500">
+                            <option value="充裕 (追求高品質/高檔體驗/便利交通)">充裕 (高品質體驗 / 高CP值精緻專車或便利交通)</option>
+                            <option value="一般 (中等消費/平衡性高)" selected>一般 (標準大眾消費 / 著重性價比)</option>
+                            <option value="窮遊 (精打細算/大眾運輸/平價景點)">窮遊 (精打細算 / 著重免費或平價景點)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="mt-8 flex justify-end">
+                    <button type="submit" id="submitBtn" class="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold px-8 py-3.5 rounded-xl shadow-md hover:shadow-lg transition-all duration-200 flex items-center justify-center space-x-2">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i>
+                        <span>AI 分析團員並搜尋推介景點</span>
+                    </button>
+                </div>
+            </form>
+        </section>
+
+        <!-- Loading State Indicator -->
+        <div id="loadingBox" class="hidden bg-white rounded-2xl border border-slate-200 p-8 text-center my-8 shadow-sm">
+            <div class="inline-flex items-center justify-center p-4 bg-blue-50 text-blue-600 rounded-full mb-4 animate-bounce">
+                <i class="fa-solid fa-compass text-3xl"></i>
+            </div>
+            <h3 class="text-lg font-bold text-slate-800">Gemini 3 Flash 正在為您計算行程與搜尋景點...</h3>
+            <p class="text-xs text-slate-500 mt-2 max-w-md mx-auto" id="loadingText">
+                正在進行 Google Search 實時檢索，評估景點無障礙設施、步行距離及適合度...
+            </p>
+            <div class="w-48 h-1.5 bg-slate-100 rounded-full mx-auto mt-6 overflow-hidden">
+                <div class="bg-blue-600 h-full rounded-full animate-pulse w-3/4"></div>
+            </div>
+        </div>
+
+        <!-- Output Section -->
+        <div id="outputSection" class="hidden space-y-6">
+            
+            <!-- Trip Summary & Arrival Time Banner -->
+            <div class="bg-gradient-to-br from-slate-900 to-indigo-950 text-white rounded-2xl p-6 shadow-md border border-slate-800 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                <div>
+                    <div class="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-500/20 text-blue-300 text-xs font-medium rounded-full border border-blue-400/30 mb-2">
+                        <i class="fa-solid fa-clock"></i> 時間估算分析
+                    </div>
+                    <h3 class="text-xl font-bold text-white flex items-center gap-2">
+                        預計去程抵達當地時間：<span id="arrivalTimeDisplay" class="text-amber-400">--</span>
+                    </h3>
+                    <p class="text-xs text-slate-300 mt-1" id="timeZoneNote"></p>
+                </div>
+                <div class="bg-white/10 backdrop-blur-sm p-3.5 rounded-xl text-xs space-y-1 text-slate-200 min-w-[240px]">
+                    <div><span class="text-slate-400">同行結構:</span> <span id="summaryGroup" class="font-semibold text-white">--</span></div>
+                    <div><span class="text-slate-400">旅行目的:</span> <span id="summaryPurpose" class="font-semibold text-white">--</span></div>
+                    <div><span class="text-slate-400">預算等級:</span> <span id="summaryBudget" class="font-semibold text-white">--</span></div>
+                </div>
+            </div>
+
+            <!-- Main Results Header & Actions Bar -->
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white p-4 rounded-xl border border-slate-200">
+                <div class="flex items-center space-x-2">
+                    <h3 class="text-lg font-bold text-slate-800">熱門景點分析清單</h3>
+                    <span id="spotCountBadge" class="bg-blue-100 text-blue-700 text-xs px-2.5 py-0.5 rounded-full font-semibold">0 個景點</span>
+                </div>
+                <div class="flex flex-wrap gap-2 w-full sm:w-auto">
+                    <button onclick="openSelectedInGoogleMaps()" class="text-xs bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 px-3 py-2 rounded-lg transition font-medium flex items-center gap-1">
+                        <i class="fa-solid fa-map-location-dot text-rose-600"></i> Google Maps 一鍵開啟路線
+                    </button>
+                    <button onclick="selectAllRecommendStars()" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-2 rounded-lg transition font-medium">
+                        <i class="fa-solid fa-check-double mr-1 text-blue-600"></i> 一鍵勾選 5星景點
+                    </button>
+                    <button onclick="discoverMoreAttractions()" class="text-xs bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 px-3 py-2 rounded-lg transition font-medium flex items-center gap-1">
+                        <i class="fa-solid fa-rotate text-amber-600"></i> 替換未選並發掘更多
+                    </button>
+                    <button onclick="copyMarkdownTable()" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-2 rounded-lg transition font-medium">
+                        <i class="fa-solid fa-copy mr-1 text-emerald-600"></i> 複製 Markdown 表格
+                    </button>
+                    <button onclick="exportSpotsToExcel()" class="text-xs bg-emerald-700 hover:bg-emerald-800 text-white px-3.5 py-2 rounded-lg transition font-medium flex items-center gap-1 shadow-sm">
+                        <i class="fa-solid fa-file-excel"></i> 匯出 Excel
+                    </button>
+                    <button onclick="generateCustomItinerary()" class="text-xs bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition font-medium flex items-center gap-1 shadow-sm">
+                        <i class="fa-solid fa-calendar-day"></i> 根據已選景點生成每日行程
+                    </button>
+                </div>
+            </div>
+
+            <!-- Table Container -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="overflow-x-auto custom-scrollbar">
+                    <table class="w-full text-left text-xs border-collapse" id="attractionsTable">
+                        <thead class="bg-slate-100/80 border-b border-slate-200 text-slate-700 uppercase font-semibold">
+                            <tr>
+                                <th class="p-3.5 text-center w-12">選擇</th>
+                                <th class="p-3.5 min-w-[140px]">景點名稱</th>
+                                <th class="p-3.5 min-w-[200px]">簡介（50字內）</th>
+                                <th class="p-3.5 min-w-[180px]">適合度說明</th>
+                                <th class="p-3.5 text-center min-w-[120px]">推介度</th>
+                                <th class="p-3.5 min-w-[220px]">推介 / 不推介原因</th>
+                                <th class="p-3.5 min-w-[120px]">參考連結</th>
+                            </tr>
+                        </thead>
+                        <tbody id="attractionTableBody" class="divide-y divide-slate-100">
+                            <!-- Dynamic Content Rendered Here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Markdown Output Raw Preview Accordion -->
+            <details class="bg-white rounded-xl border border-slate-200 p-4">
+                <summary class="cursor-pointer font-semibold text-xs text-slate-600 hover:text-slate-900 flex items-center justify-between">
+                    <span><i class="fa-solid fa-code text-blue-500 mr-2"></i>檢視原生 Markdown 代碼格式</span>
+                    <span class="text-[10px] text-slate-400">點擊展開 / 隱藏</span>
+                </summary>
+                <div class="mt-3">
+                    <textarea id="markdownRawText" readonly class="w-full h-48 p-3 font-mono text-[11px] bg-slate-900 text-emerald-400 rounded-lg border border-slate-700 resize-y custom-scrollbar"></textarea>
+                </div>
+            </details>
+
+            <!-- Custom Itinerary Output Box -->
+            <div id="itinerarySection" class="hidden bg-white rounded-2xl shadow-md border border-indigo-100 p-6 sm:p-8 space-y-4">
+                <div class="flex items-center justify-between border-b border-slate-100 pb-4">
+                    <h3 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+                        <i class="fa-solid fa-route text-indigo-600"></i> AI 建議每日詳細行程規劃
+                    </h3>
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs text-slate-400 hidden sm:inline mr-2">針對您的團員組合與步行節奏優化</span>
+                        <button onclick="exportItineraryToExcel()" id="exportExcelBtn" class="hidden text-xs bg-emerald-700 hover:bg-emerald-800 text-white px-3.5 py-2 rounded-lg transition font-medium flex items-center gap-1.5 shadow-sm">
+                            <i class="fa-solid fa-file-excel"></i> 匯出行程
+                        </button>
+                        <button onclick="exportItineraryPDF()" id="exportPdfBtn" class="hidden text-xs bg-rose-600 hover:bg-rose-700 text-white px-3.5 py-2 rounded-lg transition font-medium flex items-center gap-1.5 shadow-sm">
+                            <i class="fa-solid fa-file-pdf"></i> 匯出 PDF
+                        </button>
+                    </div>
+                </div>
+                <div id="itineraryContent" class="prose prose-slate max-w-none text-sm text-slate-700 space-y-4 leading-relaxed">
+                    <!-- Dynamic itinerary content -->
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <script>
+        let globalSpotsData = [];
+        let globalGroundingSources = [];
+
+        // Set default dates on load
+        window.addEventListener('DOMContentLoaded', () => {
+            const today = new Date();
+            const futureDate = new Date();
+            futureDate.setDate(today.getDate() + 7);
+            const returnDate = new Date();
+            returnDate.setDate(today.getDate() + 12);
+
+            const depDateInput = document.getElementById('depDate');
+            const retDateInput = document.getElementById('retDate');
+
+            if (depDateInput && !depDateInput.value) {
+                depDateInput.value = futureDate.toISOString().split('T')[0];
+            }
+            if (retDateInput && !retDateInput.value) {
+                retDateInput.value = returnDate.toISOString().split('T')[0];
+            }
+        });
+
+        // Toast message replacement for alerts
+        function showToast(message, type = 'info') {
+            let toast = document.getElementById('customToast');
+            if (!toast) {
+                toast = document.createElement('div');
+                toast.id = 'customToast';
+                document.body.appendChild(toast);
+            }
+            toast.className = `fixed bottom-5 right-5 z-50 px-4 py-3 rounded-xl shadow-lg text-xs font-medium text-white transition-all transform duration-300 ${type === 'error' ? 'bg-rose-600' : 'bg-slate-800'}`;
+            toast.textContent = message;
+            toast.classList.remove('translate-y-10', 'opacity-0');
+            setTimeout(() => {
+                toast.classList.add('translate-y-10', 'opacity-0');
+            }, 4000);
+        }
+
+        // Calculate arrival date & time
+        function calculateArrival(depDateStr, depTimeStr, flightHours, depLoc, arrLoc) {
+            if (!depDateStr || !depTimeStr) return { formattedStr: '--', tzNotice: '' };
+            
+            try {
+                const dt = new Date(`${depDateStr}T${depTimeStr}:00`);
+                const hours = parseFloat(flightHours) || 0;
+                
+                // Calculate offset if departing HK and arriving Japan (+1 hour)
+                let tzDiffHours = 0;
+                const arrLower = (arrLoc || '').toLowerCase();
+                const depLower = (depLoc || '').toLowerCase();
+                if ((arrLoc.includes('日本') || arrLower.includes('japan') || arrLower.includes('nrt') || arrLower.includes('hnd') || arrLower.includes('kix') || arrLower.includes('tokyo') || arrLower.includes('osaka')) && 
+                    (depLoc.includes('香港') || depLower.includes('hkg') || depLower.includes('hong kong'))) {
+                    tzDiffHours = 1;
+                }
+                
+                const arrivalTimeMs = dt.getTime() + (hours + tzDiffHours) * 3600 * 1000;
+                const arrDt = new Date(arrivalTimeMs);
+                
+                if (isNaN(arrDt.getTime())) {
+                    return { formattedStr: '--', tzNotice: '' };
+                }
+
+                const yyyy = arrDt.getFullYear();
+                const mm = String(arrDt.getMonth() + 1).padStart(2, '0');
+                const dd = String(arrDt.getDate()).padStart(2, '0');
+                const hh = String(arrDt.getHours()).padStart(2, '0');
+                const min = String(arrDt.getMinutes()).padStart(2, '0');
+                
+                const weekdays = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
+                const dayName = weekdays[arrDt.getDay()];
+                
+                const formattedStr = `${yyyy}-${mm}-${dd} ${hh}:${min} (${dayName})`;
+                const tzNotice = tzDiffHours > 0 ? ` (已含預估 +${tzDiffHours} 小時當地時差轉換)` : '';
+                
+                return { formattedStr, tzNotice };
+            } catch (e) {
+                console.error('Error calculating arrival:', e);
+                return { formattedStr: '--', tzNotice: '' };
+            }
+        }
+
+        // Render attractions table
+        function renderAttractionsTable(spots, sources) {
+            const tbody = document.getElementById('attractionTableBody');
+            const badge = document.getElementById('spotCountBadge');
+            if (badge) badge.textContent = `${spots.length} 個景點`;
+            
+            if (!tbody) return;
+            tbody.innerHTML = '';
+
+            const arrLocation = document.getElementById('arrLocation') ? document.getElementById('arrLocation').value : '';
+
+            spots.forEach((spot, idx) => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50 transition border-b border-slate-100";
+                
+                const numRating = Math.min(5, Math.max(1, parseInt(spot.rating) || 3));
+                const stars = '★'.repeat(numRating) + '☆'.repeat(5 - numRating);
+                const ratingBadgeColor = numRating >= 4 ? 'text-amber-500' : (numRating === 3 ? 'text-blue-500' : 'text-slate-400');
+                
+                const mapSearchUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent((spot.name || '') + ' ' + arrLocation)}`;
+                
+                tr.innerHTML = `
+                    <td class="p-3.5 text-center">
+                        <input type="checkbox" class="spot-checkbox w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500 cursor-pointer" data-index="${idx}" ${numRating >= 4 ? 'checked' : ''}>
+                    </td>
+                    <td class="p-3.5 font-semibold text-slate-800">${spot.name || '未命名景點'}</td>
+                    <td class="p-3.5 text-slate-600 leading-relaxed">${spot.description || '-'}</td>
+                    <td class="p-3.5 text-slate-600 leading-relaxed">${spot.suitability || '-'}</td>
+                    <td class="p-3.5 text-center ${ratingBadgeColor} font-bold text-sm tracking-widest" title="${numRating} 星">
+                        ${stars}
+                    </td>
+                    <td class="p-3.5 text-slate-600 leading-relaxed">${spot.reason || '-'}</td>
+                    <td class="p-3.5">
+                        <a href="${mapSearchUrl}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-2.5 py-1.5 rounded-lg border border-blue-200 transition font-medium">
+                            <i class="fa-solid fa-map-location-dot"></i> 地圖
+                        </a>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Select all 4+ star recommendations
+        function selectAllRecommendStars() {
+            const checkboxes = document.querySelectorAll('.spot-checkbox');
+            let count = 0;
+            checkboxes.forEach((cb) => {
+                const idx = parseInt(cb.getAttribute('data-index'));
+                if (globalSpotsData[idx] && (parseInt(globalSpotsData[idx].rating) || 0) >= 4) {
+                    cb.checked = true;
+                    count++;
+                }
+            });
+            showToast(`已勾選 ${count} 個高推介度 (4-5星) 景點！`);
+        }
+
+        // Generate raw Markdown text preview
+        function generateMarkdownCode(spots, sources) {
+            let md = `| 景點名稱 | 簡介（50字內） | 適合度說明 | 推介度（1-5星） | 推介/不推介原因 | 參考連結 | 選擇框 |\n`;
+            md += `| --- | --- | --- | --- | --- | --- | --- |\n`;
+
+            const arrLocation = document.getElementById('arrLocation') ? document.getElementById('arrLocation').value : '';
+
+            spots.forEach((spot) => {
+                const numRating = Math.min(5, Math.max(1, parseInt(spot.rating) || 3));
+                const stars = '★'.repeat(numRating) + '☆'.repeat(5 - numRating);
+                const mapSearchUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent((spot.name || '') + ' ' + arrLocation)}`;
+                const isChecked = numRating >= 4 ? '[x]' : '[ ]';
+                
+                md += `| ${spot.name || ''} | ${spot.description || ''} | ${spot.suitability || ''} | ${stars} (${numRating}星) | ${spot.reason || ''} | [Google Maps](${mapSearchUrl}) | ${isChecked} |\n`;
+            });
+
+            const textarea = document.getElementById('markdownRawText');
+            if (textarea) {
+                textarea.value = md;
+            }
+        }
+
+        // Form Submission Handler
+        async function handlePlanSubmit(event) {
+            event.preventDefault();
+
+            const depLocation = document.getElementById('depLocation').value;
+            const viaLocation1 = document.getElementById('viaLocation1').value;
+            const viaLocation2 = document.getElementById('viaLocation2').value;
+            const depDate = document.getElementById('depDate').value;
+            const depTime = document.getElementById('depTime').value;
+            const arrLocation = document.getElementById('arrLocation').value;
+            const retDate = document.getElementById('retDate').value;
+            const retTime = document.getElementById('retTime').value;
+            const flightHours = document.getElementById('flightHours').value;
+
+            const adults = document.getElementById('numAdults').value;
+            const kids = document.getElementById('numKids').value;
+            const elderly = document.getElementById('numElderly').value;
+
+            const relation = document.getElementById('groupRelation').value;
+            const purpose = document.getElementById('travelPurpose').value;
+            const budget = document.getElementById('travelBudget').value;
+
+            // Calculate Arrival
+            const arrivalResult = calculateArrival(depDate, depTime, flightHours, depLocation, arrLocation);
+            document.getElementById('arrivalTimeDisplay').textContent = arrivalResult.formattedStr;
+            
+            let viaText = "";
+            if (viaLocation1) viaText += ` | 經停1: ${viaLocation1}`;
+            if (viaLocation2) viaText += ` | 經停2: ${viaLocation2}`;
+
+            document.getElementById('timeZoneNote').textContent = `出發地：${depLocation}${viaText} | 目的地：${arrLocation} | 飛行：${flightHours} 小時${arrivalResult.tzNotice}`;
+
+            document.getElementById('summaryGroup').textContent = `${adults}成人, ${kids}小孩, ${elderly}長者 (${relation})`;
+            document.getElementById('summaryPurpose').textContent = purpose;
+            document.getElementById('summaryBudget').textContent = budget;
+
+            // Toggle Loading UI
+            document.getElementById('loadingBox').classList.remove('hidden');
+            document.getElementById('outputSection').classList.add('hidden');
+            document.getElementById('itinerarySection').classList.add('hidden');
+
+            try {
+                // Call Gemini 3 Flash with Search Grounding
+                await fetchAttractionsFromGemini({
+                    depLocation, viaLocation1, viaLocation2, depDate, depTime,
+                    arrLocation, retDate, retTime,
+                    flightHours, adults, kids, elderly,
+                    relation, purpose, budget
+                });
+            } catch (err) {
+                console.error(err);
+                showToast('搜尋景點時發生錯誤：' + err.message, 'error');
+            } finally {
+                document.getElementById('loadingBox').classList.add('hidden');
+            }
+        }
+
+        // Gemini API Fetch with Search Grounding
+        async function fetchAttractionsFromGemini(params) {
+            const apiKey = ""; 
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+            const viaInfo = [params.viaLocation1, params.viaLocation2].filter(Boolean).join('、');
+            const viaPromptText = viaInfo ? `中途經停地點：${viaInfo}` : '無經停地點';
+
+            const systemPrompt = `你是一位精明且無微不至的專業旅遊規劃師。你必須調用 Google Search 搜尋目的地 (${params.arrLocation}) 及經停地點 (${viaInfo || '無'}) 的最新熱門景點、經典必去及隱藏景點，並根據團員組合與預算進行評估。
+
+【最高指導原則】：
+1. 真實優先於理想：建議必須基於指定日期、季節、目的地的實際營運狀況。
+2. 風險透明：必須主動指出可能的問題（如休館、人潮、天氣、體力負擔、預約困難等）。
+3. 使用者條件優先：嚴格依照使用者的體力、年齡層、行動能力、偏好來調整。
+4. 絕不產生幻覺：若無法確認景點特定日期開放狀況、預約需求或交通可行性，請明確標示「需進一步確認」，並提供替代建議。
+5. 行程特性呼應：若旅行目的包含「自駕遊」，推薦景點必須嚴格考慮停車難易度與車程；若包含「獨遊」，須考量單人安全性、一人食便利性與隨心探索的彈性。`;
+
+            const userPrompt = `
+請分析並推介適合以下旅遊設定的景點：
+- 出發地：${params.depLocation} (日期: ${params.depDate} ${params.depTime})
+- ${viaPromptText}
+- 目的地：${params.arrLocation} (日期: ${params.retDate} ${params.retTime})
+- 飛行時間：${params.flightHours} 小時
+- 團員結構：${params.adults} 名成人, ${params.kids} 名小朋友, ${params.elderly} 名老人家
+- 團員關係：${params.relation}
+- 旅行目的：${params.purpose}
+- 預算風格：${params.budget}
+
+【強制檢查清單】（評估景點時必須考慮）：
+- 該日期是否為當地假期、連假、特殊活動期間？人潮與價格影響？
+- 景點是否有季節性休館、臨時關閉、預約制？
+- 當地預期天氣條件（如高溫、雨季、颱風季、極寒）對該景點的影響？
+- 交通方式對這組團員的實際負擔（特別考慮長者/幼童的步行距離、轉乘、無障礙設施；若目的包含「自駕遊」，必須考慮停車場與自駕便利性）？
+
+【評分標準】（必須嚴格遵守，不可全部給高分）：
+- 5星：幾乎完美匹配團員結構、預算、目的，交通極度便利、無明顯風險，強烈推薦。
+- 4星：整體適合，但有輕微缺點（例如需預約、人潮稍多、費用略高）。
+- 3星：可接受但有明顯取捨（步行較多、需多次轉乘、不適合長者/幼童體力、費用偏高、排隊風險高等）。
+- 2星：勉強可去，但缺點明顯，多數情況不建議優先選擇。
+- 1星：明顯不適合此團員組合（有長者卻大量階梯/爬山、太偏遠、不適合兒童、費用遠超預算等）。
+
+【強制要求】：
+1. 評分必須有真實區分度，絕對不可全部給 4 星或 5 星。
+2. 在 8–12 個景點中，至少要有 2–3 個給 3 星或以下，並清楚說明不推介或有條件推介的原因。
+3. 寧可給較低分數並寫清楚風險，也不要為了好看而全部高分。
+
+【輸出格式需求】：
+請嚴格返回一個符合以下 JSON 格式的字符串 (不要包含任何額外引言或說明，只需輸出純 JSON)：
+{
+  "attractions": [
+    {
+      "name": "景點名稱",
+      "description": "50字內精煉簡介",
+      "suitability": "針對該團員組合（長者/小孩）與預算之適合度詳細說明",
+      "rating": 5,
+      "reason": "推介或不推介的具體理由，並務必列出潛在風險（如排隊、休館風險、體力要求）",
+      "search_query": "景點名稱"
+    }
+  ]
+}
+
+請確保列出 8 至 12 個熱門景點（如有經停地點，請包含經停地點之精選景點）。全部使用繁體中文。
+`;
+
+            const payload = {
+                contents: [{ parts: [{ text: userPrompt }] }],
+                tools: [{ "google_search": {} }],
+                systemInstruction: { parts: [{ text: systemPrompt }] }
+            };
+
+            let response;
+            let retries = 3;
+            let delay = 1000;
+
+            while (retries > 0) {
+                try {
+                    response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    if (response.ok) break;
+                } catch (e) {
+                    console.log('Retry fetch due to error:', e);
+                }
+                retries--;
+                await new Promise(res => setTimeout(res, delay));
+                delay *= 2;
+            }
+
+            if (!response || !response.ok) {
+                throw new Error('無法取得 Gemini AI 回應，請稍後再試。');
+            }
+
+            const result = await response.json();
+            const candidate = result.candidates?.[0];
+
+            let sources = [];
+            if (candidate?.groundingMetadata?.groundingAttributions) {
+                sources = candidate.groundingMetadata.groundingAttributions
+                    .map(attr => ({
+                        uri: attr.web?.uri,
+                        title: attr.web?.title
+                    }))
+                    .filter(src => src.uri && src.title);
+            }
+            globalGroundingSources = sources;
+
+            const textOutput = candidate?.content?.parts?.[0]?.text || "";
+            const jsonMatch = textOutput.match(/\{[\s\S]*\}/);
+            if (!jsonMatch) {
+                throw new Error("AI 回應格式不符合預期，請重新嘗試。");
+            }
+
+            const parsedData = JSON.parse(jsonMatch[0]);
+            globalSpotsData = parsedData.attractions || [];
+
+            renderAttractionsTable(globalSpotsData, globalGroundingSources);
+            generateMarkdownCode(globalSpotsData, globalGroundingSources);
+
+            document.getElementById('outputSection').classList.remove('hidden');
+        }
+
+        function openSelectedInGoogleMaps() {
+            const arrLocation = document.getElementById('arrLocation').value;
+            const checkboxes = document.querySelectorAll('.spot-checkbox:checked');
+            const selectedSpots = [];
+            checkboxes.forEach(cb => {
+                const idx = parseInt(cb.getAttribute('data-index'));
+                if (globalSpotsData[idx]) {
+                    selectedSpots.push(globalSpotsData[idx].name + ' ' + arrLocation);
+                }
+            });
+
+            if (selectedSpots.length === 0) {
+                showToast('請先在表格中勾選至少一個想在地圖開啟的景點！', 'error');
+                return;
+            }
+
+            if (selectedSpots.length === 1) {
+                const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selectedSpots[0])}`;
+                window.open(url, '_blank');
+            } else {
+                const origin = selectedSpots[0];
+                const destination = selectedSpots[selectedSpots.length - 1];
+                const waypoints = selectedSpots.slice(1, -1).join('|');
+                let url = `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}`;
+                if (waypoints) {
+                    url += `&waypoints=${encodeURIComponent(waypoints)}`;
+                }
+                window.open(url, '_blank');
+            }
+        }
+
+        function copyMarkdownTable() {
+            const textToCopy = document.getElementById('markdownRawText').value;
+            if (!textToCopy) {
+                showToast('沒有內容可複製', 'error');
+                return;
+            }
+            
+            // 建立一個暫時的 textarea，確保在畫面上以便複製
+            const tempTextArea = document.createElement("textarea");
+            tempTextArea.value = textToCopy;
+            document.body.appendChild(tempTextArea);
+            tempTextArea.select();
+            tempTextArea.setSelectionRange(0, 99999); // 兼容手機版
+            
+            try {
+                document.execCommand('copy');
+                showToast('Markdown 表格已成功複製至剪貼簿！');
+            } catch (err) {
+                showToast('複製失敗，請手動全選複製。', 'error');
+            }
+            
+            document.body.removeChild(tempTextArea);
+        }
+
+        // Action: Discover More Attractions (Replace Unselected)
+        async function discoverMoreAttractions() {
+            const checkboxes = document.querySelectorAll('.spot-checkbox');
+            const selectedSpots = [];
+            checkboxes.forEach((cb, idx) => {
+                if (cb.checked && globalSpotsData[idx]) {
+                    selectedSpots.push(globalSpotsData[idx]);
+                }
+            });
+
+            if (selectedSpots.length === 0) {
+                showToast('請先在表格中勾選您想保留的景點，系統將為您發掘新景點替換未勾選的項目！', 'error');
+                return;
+            }
+
+            const selectedNames = selectedSpots.map(s => s.name).join('、');
+
+            // Show loading UI
+            document.getElementById('loadingBox').classList.remove('hidden');
+            document.getElementById('loadingText').textContent = "正在保留已選景點，並運用 Google Search 實時檢索更多全新景點來替換未選項目...";
+            document.getElementById('outputSection').classList.add('hidden');
+            document.getElementById('itinerarySection').classList.add('hidden');
+
+            const depLocation = document.getElementById('depLocation').value;
+            const arrLocation = document.getElementById('arrLocation').value;
+            const viaLocation1 = document.getElementById('viaLocation1').value;
+            const viaLocation2 = document.getElementById('viaLocation2').value;
+            const viaInfo = [viaLocation1, viaLocation2].filter(Boolean).join('、');
+            const viaPromptText = viaInfo ? `中途經停地點：${viaInfo}` : '無經停地點';
+            
+            const adults = document.getElementById('numAdults').value;
+            const kids = document.getElementById('numKids').value;
+            const elderly = document.getElementById('numElderly').value;
+            const relation = document.getElementById('groupRelation').value;
+            const purpose = document.getElementById('travelPurpose').value;
+            const budget = document.getElementById('travelBudget').value;
+
+            const systemPrompt = `你是一位精明且無微不至的專業旅遊規劃師。你必須調用 Google Search 搜尋最新熱門景點，並根據團員組合與預算進行評估。
+若旅行目的包含「自駕遊」，推薦景點必須考慮停車難易度與車程；若包含「獨遊」，須考量單人安全性、一人食便利性與隨心探索的彈性。絕不可產生幻覺。
+
+【評分強制要求】：評分必須有真實區分度，不可全部給 4–5 星。必須包含部分 3 星或以下的景點，並清楚說明風險或不適合的原因。`;
+
+            const userPrompt = `
+使用者已經選擇了以下景點，打算保留：
+【已保留景點】：${selectedNames}
+
+請根據以下旅遊設定，為使用者推介 10 到 15 個 **全新且不重複** 的熱門或隱藏景點來發掘更多可能性：
+- 出發地：${depLocation}
+- ${viaPromptText}
+- 目的地：${arrLocation}
+- 團員結構：${adults} 成人, ${kids} 小朋友, ${elderly} 長者
+- 團員關係：${relation}
+- 旅行目的：${purpose}
+- 預算風格：${budget}
+
+【強制要求】：
+1. 推薦的新景點絕對不可以與【已保留景點】重複！
+2. 嚴格依照使用者的體力、行動能力、偏好（特別是自駕遊或獨遊特性）來挑選。
+
+【輸出格式需求】：
+請嚴格返回一個符合以下 JSON 格式的字符串 (不要包含任何額外引言或說明，只需輸出純 JSON)：
+{
+  "attractions": [
+    {
+      "name": "景點名稱",
+      "description": "50字內精煉簡介",
+      "suitability": "針對該團員組合與預算之適合度詳細說明",
+      "rating": 5,
+      "reason": "推介或不推介的具體理由，並務必列出潛在風險",
+      "search_query": "景點名稱"
+    }
+  ]
+}
+`;
+
+            const apiKey = "";
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+            const payload = {
+                contents: [{ parts: [{ text: userPrompt }] }],
+                tools: [{ "google_search": {} }],
+                systemInstruction: { parts: [{ text: systemPrompt }] }
+            };
+
+            let response;
+            let retries = 3;
+            let delay = 1000;
+
+            while (retries > 0) {
+                try {
+                    response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    if (response.ok) break;
+                } catch (e) {
+                    console.log('Retry fetch due to error:', e);
+                }
+                retries--;
+                await new Promise(res => setTimeout(res, delay));
+                delay *= 2;
+            }
+
+            try {
+                if (!response || !response.ok) throw new Error('無法取得 Gemini AI 回應。');
+                const result = await response.json();
+                const candidate = result.candidates?.[0];
+                
+                let sources = [];
+                if (candidate?.groundingMetadata?.groundingAttributions) {
+                    sources = candidate.groundingMetadata.groundingAttributions
+                        .map(attr => ({ uri: attr.web?.uri, title: attr.web?.title }))
+                        .filter(src => src.uri && src.title);
+                }
+                globalGroundingSources = globalGroundingSources.concat(sources);
+
+                const textOutput = candidate?.content?.parts?.[0]?.text || "";
+                const jsonMatch = textOutput.match(/\{[\s\S]*\}/);
+                if (!jsonMatch) throw new Error("AI 回應格式不符合預期。");
+
+                const parsedData = JSON.parse(jsonMatch[0]);
+                const newSpots = parsedData.attractions || [];
+
+                // Update global data: keep selected, add new
+                globalSpotsData = [...selectedSpots, ...newSpots];
+
+                // Render
+                renderAttractionsTable(globalSpotsData, globalGroundingSources);
+                generateMarkdownCode(globalSpotsData, globalGroundingSources);
+                showToast(`成功保留 ${selectedSpots.length} 個景點，並為您新增 ${newSpots.length} 個新景點！`);
+
+            } catch (err) {
+                console.error(err);
+                showToast('搜尋新景點時發生錯誤：' + err.message, 'error');
+            } finally {
+                document.getElementById('loadingBox').classList.add('hidden');
+                document.getElementById('outputSection').classList.remove('hidden');
+                
+                // Ensure the previously selected spots remain checked visually
+                const checkboxesToRecheck = document.querySelectorAll('.spot-checkbox');
+                for (let i = 0; i < selectedSpots.length; i++) {
+                    if (checkboxesToRecheck[i]) checkboxesToRecheck[i].checked = true;
+                }
+            }
+        }
+
+        // Action: Generate Custom Daily Itinerary
+        async function generateCustomItinerary() {
+            const checkboxes = document.querySelectorAll('.spot-checkbox:checked');
+            const selectedSpots = [];
+            checkboxes.forEach(cb => {
+                const idx = parseInt(cb.getAttribute('data-index'));
+                if (globalSpotsData[idx]) {
+                    selectedSpots.push(globalSpotsData[idx].name);
+                }
+            });
+
+            if (selectedSpots.length === 0) {
+                showToast('請先在表格中勾選至少一個您想去的景點！', 'error');
+                return;
+            }
+
+            const itinerarySection = document.getElementById('itinerarySection');
+            const itineraryContent = document.getElementById('itineraryContent');
+            const exportPdfBtn = document.getElementById('exportPdfBtn');
+            const exportExcelBtn = document.getElementById('exportExcelBtn');
+
+            itinerarySection.classList.remove('hidden');
+            if (exportPdfBtn) exportPdfBtn.classList.add('hidden');
+            if (exportExcelBtn) exportExcelBtn.classList.add('hidden');
+
+            itineraryContent.innerHTML = `
+                <div class="flex items-center space-x-2 text-indigo-600 font-semibold text-sm py-4">
+                    <i class="fa-solid fa-spinner animate-spin text-lg"></i>
+                    <span>行程優化專家 Gemini 3 Flash 正在為您計算真實日期、地理集群與動線優化...</span>
+                </div>
+            `;
+
+            itinerarySection.scrollIntoView({ behavior: 'smooth' });
+
+            const apiKey = "";
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+            const depDateStr = document.getElementById('depDate').value;
+            const retDateStr = document.getElementById('retDate').value;
+            const depTime = document.getElementById('depTime').value;
+            const retTime = document.getElementById('retTime').value;
+            const depLocation = document.getElementById('depLocation').value;
+            const viaLocation1 = document.getElementById('viaLocation1').value;
+            const viaLocation2 = document.getElementById('viaLocation2').value;
+            const arrLocation = document.getElementById('arrLocation').value;
+            const adults = document.getElementById('numAdults').value;
+            const kids = document.getElementById('numKids').value;
+            const elderly = document.getElementById('numElderly').value;
+            const relation = document.getElementById('groupRelation').value;
+            const budget = document.getElementById('travelBudget').value;
+
+            // Calculate precise travel date array
+            const startDate = new Date(depDateStr + 'T00:00:00');
+            const endDate = new Date(retDateStr + 'T00:00:00');
+            const diffTime = endDate.getTime() - startDate.getTime();
+            const totalDays = Math.max(1, Math.round(diffTime / (1000 * 3600 * 24)) + 1);
+
+            const dateList = [];
+            const weekdays = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
+
+            for (let i = 0; i < totalDays; i++) {
+                const curDate = new Date(startDate.getTime() + i * 24 * 60 * 60 * 1000);
+                const yyyy = curDate.getFullYear();
+                const mm = String(curDate.getMonth() + 1).padStart(2, '0');
+                const dd = String(curDate.getDate()).padStart(2, '0');
+                const dayName = weekdays[curDate.getDay()];
+                dateList.push(`第 ${i + 1} 天：${yyyy}-${mm}-${dd} (${dayName})`);
+            }
+
+            const systemPrompt = `你是一位頂級專業的旅遊行程優化專家。請給出清晰、排版美觀、具體日期明確且富有視覺層次感的行程建議。
+
+【最高指導原則】：
+1. 真實優先於理想：行程安排必須基於指定日期、季節、目的地的實際營運狀況與常理。
+2. 風險透明：必須在行程中主動指出可能的問題（如塞車、公休、人潮、天氣影響、體力透支風險）。
+3. 使用者條件優先：嚴格依照團員組合（長者/幼童數量）的體力、行動能力來安排節奏。
+4. 絕不產生幻覺：若無法確認某些交通銜接或景點預約狀況，明確寫出「需提前確認預約狀況」或「建議準備備案」。
+5. 資訊必須基於即時搜尋：所有營業時間、票價、預約需求、交通班次與最新人潮狀況，皆須透過搜尋確認；無法確認時必須明確標註。
+6. 特殊旅行目的完美融入：如果旅行目的為「自駕遊」，每日詳細行程必須自然包含車程估算、租車/還車點建議、推薦停車場、避開塞車時段及自駕專屬風險（如冬季雪地、過路費）；如果為「獨遊」，行程需注重個人安全提示、一人食餐廳推薦（如拉麵、個人燒肉、吧台座位）及適合單人沉浸的步調。`;
+
+            const viaText = [viaLocation1, viaLocation2].filter(Boolean).join('、');
+
+            const userPrompt = `
+你是一位行程優化專家。使用者已選擇以下景點：
+${selectedSpots.map((spot, i) => `${i + 1}. ${spot}`).join('\n')}
+
+【旅遊背景與時間總覽】：
+- 去程時間與地點：${depLocation} (日期: ${depDateStr} ${depTime})
+${viaText ? `- 經停地點：${viaText}` : ''}
+- 回程時間與地點：${arrLocation} (日期: ${retDateStr} ${retTime})
+- 總旅行天數：共 ${totalDays} 天
+- 每日具體日期與星期：
+${dateList.map(d => `  * ${d}`).join('\n')}
+- 團員結構：${adults} 名成人, ${kids} 名小朋友, ${elderly} 名長者 (${relation})
+- 預算風格：${budget}
+
+請規劃完整行程，必須嚴格遵守以下所有規則與【強制檢查清單】：
+
+【強制檢查清單】（排定每日行程時必須過一遍）：
+
+- 這些日期是否遇到當地假期或特殊活動？人潮與價格影響？
+- 安排的景點在該星期幾是否通常公休？需要預約嗎？
+- 天氣因素會如何影響當天動線？
+- 點到點的交通負擔大嗎？轉乘次數、步行動線是否適合長者或小孩？（若目的包含「自駕遊」，請務必規劃租車取還車點、車程時間、停車建議及避開塞車時段）
+- 每天的體力消耗是否合理？是否有留足夠的休息與用餐緩衝時間？
+- 【優惠與票券】必須用 Google 搜尋即時資料，檢查該地區／該日期是否有適合的交通或景點優惠（例如 JR Pass、區域一日券、觀光巴士券、景點聯票、早鳥票、線上優惠碼等）。評估是否值得購買、購買後可節省多少時間或金錢、以及如何把這些優惠自然融入每日動線。若有適合的 Pass／券，請明確建議購買方案並調整行程動線以最大化效益。
+- 【重大新聞與安全提醒】必須用 Google 搜尋該地區近期重大新聞與安全資訊（例如地震、颱風、洪水、火山活動、野生動物出沒如熊、大規模示威、交通中斷、景點臨時關閉等）。若有影響行程的重大事件，必須在行程開頭或相關日期明確提醒使用者，並視情況調整動線或提出替代方案。
+
+其他要求：
+- 所有建議必須基於最新可查詢的即時資訊（票價、營業時間、優惠條件、安全狀況等），不可使用過時知識。
+- 若有適合的優惠票券，請在行程中標示「建議使用 ○○ Pass／券」並說明原因與使用方式。
+- 若有重大安全或新聞事件，請用醒目方式提醒，不可省略。
+
+【排版與規則】：
+1. 必須完整涵蓋這 ${totalDays} 天（每天標題必須清楚寫出具體日期與星期，例如：### 第 1 天：${depDateStr} (星期X)），不可多天或漏天！
+2. 減少換酒店次數（理想情況全程住同一區域，如有經停地點可適度安排；若為自駕遊，可彈性安排附免費停車場的住宿）
+3. 同一天景點盡量地理集群，減少交通時間
+4. 高度重視小朋友/長者的體力與休息，避免連續高強度步行
+5. 建議餐廳時，小朋友多優先考慮 Food Court 或家庭餐廳，否則推薦適合團員風格的特色餐飲食肆（若為自駕遊，可推薦郊區特色或附設大型停車場的餐廳）
+6. 每天安排合理的午餐與晚餐時段
+7. 輸出格式必須結構化且極度美觀，請直接使用 Tailwind CSS class 進行排版（嚴禁使用 Markdown \`\`\`html 標籤），請參考以下 HTML 結構範例生成內容：
+   - 章節大標題：<h3 class='text-xl font-bold text-indigo-800 mb-4 mt-8 flex items-center gap-2'><i class='fa-solid fa-map-location-dot'></i> [標題]</h3>
+   - 每日行程卡片（強烈建議每天使用一個卡片）：<div class='bg-slate-50 border border-slate-200 rounded-xl p-5 mb-6 shadow-sm break-inside-avoid'>
+   - 每日標題：<h4 class='text-lg font-bold text-blue-700 mb-4 border-b border-blue-200 pb-2'>[日期與星期]</h4>
+   - 單一景點/行程項目（使用 Flexbox 展現時間軸感）：
+     <div class='flex items-start gap-3 mb-4 break-inside-avoid'>
+       <div class='bg-blue-100 text-blue-700 font-bold px-2 py-1 rounded text-xs min-w-[65px] text-center mt-0.5'>[時間]</div>
+       <div class='flex-1'>
+         <strong class='text-slate-800 text-base block mb-1'>[景點或活動名稱]</strong>
+         <p class='text-slate-600 text-sm leading-relaxed'>[詳細說明、交通與用餐安排...]</p>
+         <div class='bg-amber-50 text-amber-800 text-xs p-2 mt-2 rounded border-l-2 border-amber-400'>[風險提示或注意事項]</div>
+       </div>
+     </div>
+
+   文章內容必須涵蓋以下三個主要章節：
+   一、建議住宿區域與理由（含自駕停車考量）
+   二、每日詳細行程（必須涵蓋全部 ${totalDays} 天，每天包含：明確日期標題 + 時間軸 + 景點順序 + 交通方式與大約時間(自駕需含車程/停車) + 潛在風險/注意事項 + 用餐建議）
+   三、行程風險與總結（包含：總交通時間估計、節奏評價、需進一步確認的事項、雨天/突發狀況備案建議、自駕專屬提醒(如租車保險/過路費/冬季雪地駕駛)）
+`;
+
+            try {
+                const res = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: userPrompt }] }],
+                        tools: [{ "google_search": {} }],
+                        systemInstruction: { parts: [{ text: systemPrompt }] }
+                    })
+                });
+
+                const data = await res.json();
+                let rawHtml = data.candidates?.[0]?.content?.parts?.[0]?.text || "<p>無法生成行程。</p>";
+                
+                rawHtml = rawHtml.replace(/```html/g, '').replace(/```/g, '');
+                itineraryContent.innerHTML = rawHtml;
+                if (exportPdfBtn) exportPdfBtn.classList.remove('hidden');
+                if (exportExcelBtn) exportExcelBtn.classList.remove('hidden');
+            } catch (e) {
+                console.error(e);
+                itineraryContent.innerHTML = `<p class="text-rose-500 font-medium">生成行程時出錯，請稍後重試。</p>`;
+            }
+        }
+
+        // Export Itinerary & Attractions to Excel (.xlsx)
+        function exportSpotsToExcel() {
+            try {
+                const wb = XLSX.utils.book_new();
+
+                // Sheet 1: Attractions List
+                const spotRows = [
+                    ["景點名稱", "簡介（50字內）", "適合度說明", "推介度", "推介/不推介原因", "Google Maps 搜尋連結"]
+                ];
+
+                const arrLocation = document.getElementById('arrLocation').value;
+                globalSpotsData.forEach(spot => {
+                    const mapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(spot.name + ' ' + arrLocation)}`;
+                    spotRows.push([
+                        spot.name || '',
+                        spot.description || '',
+                        spot.suitability || '',
+                        `${spot.rating} 星`,
+                        spot.reason || '',
+                        mapUrl
+                    ]);
+                });
+
+                const wsSpots = XLSX.utils.aoa_to_sheet(spotRows);
+                wsSpots['!cols'] = [{ wch: 20 }, { wch: 45 }, { wch: 35 }, { wch: 10 }, { wch: 45 }, { wch: 50 }];
+                XLSX.utils.book_append_sheet(wb, wsSpots, "熱門景點清單");
+
+                XLSX.writeFile(wb, `J.Law_GEMINI_Travel_Spots_${new Date().toISOString().slice(0,10)}.xlsx`);
+                showToast('已成功匯出景點 Excel 檔案！');
+            } catch (e) {
+                console.error('Excel Export error:', e);
+                showToast('匯出景點 Excel 時發生錯誤，請稍後重試。', 'error');
+            }
+        }
+
+        function exportItineraryToExcel() {
+            try {
+                const wb = XLSX.utils.book_new();
+                
+                const itineraryContent = document.getElementById('itineraryContent');
+                if (!itineraryContent || !itineraryContent.innerText.trim()) {
+                    showToast('尚未生成行程，無法匯出！', 'error');
+                    return;
+                }
+
+                const itinRows = [
+                    ["J.Law GEMINI Travel Planner - 每日行程規劃表"],
+                    ["出發地", document.getElementById('depLocation').value, "", "出發日期", document.getElementById('depDate').value],
+                    ["目的地", document.getElementById('arrLocation').value, "", "回程日期", document.getElementById('retDate').value],
+                    ["經停點", [document.getElementById('viaLocation1').value, document.getElementById('viaLocation2').value].filter(Boolean).join('、') || '無'],
+                    [""],
+                    ["行程詳細內容："]
+                ];
+
+                const lines = itineraryContent.innerText.split('\n').map(l => l.trim()).filter(l => l !== '');
+                lines.forEach(line => {
+                    if (/^第\s*\d+\s*天/.test(line) || /^一、/.test(line) || /^二、/.test(line) || /^三、/.test(line) || /^建議住宿/.test(line) || /^每日詳細行程/.test(line) || /^總結/.test(line)) {
+                        itinRows.push([]); 
+                        itinRows.push([line]); 
+                    } else {
+                        let timeMatch = line.match(/^([0-9]{1,2}:[0-9]{2}(?:\s*(?:-|~|至)\s*[0-9]{1,2}:[0-9]{2})?)\s*[:\-]?\s*(.*)/);
+                        if (timeMatch) {
+                            itinRows.push(["", timeMatch[1], timeMatch[2]]); 
+                        } else {
+                            itinRows.push(["", "", line]); 
+                        }
+                    }
+                });
+
+                const wsItin = XLSX.utils.aoa_to_sheet(itinRows);
+                wsItin['!cols'] = [{ wch: 25 }, { wch: 20 }, { wch: 75 }, { wch: 15 }, { wch: 15 }];
+                XLSX.utils.book_append_sheet(wb, wsItin, "每日行程規劃");
+
+                XLSX.writeFile(wb, `J.Law_GEMINI_Travel_Itinerary_${new Date().toISOString().slice(0,10)}.xlsx`);
+                showToast('已成功匯出行程 Excel 檔案！');
+            } catch (e) {
+                console.error('Excel Export error:', e);
+                showToast('匯出行程 Excel 時發生錯誤，請稍後重試。', 'error');
+            }
+        }
+
+        // Action: Fixed Export Itinerary as PDF (Sanitized Clone)
+        function exportItineraryPDF() {
+            const element = document.getElementById('itinerarySection');
+            if (!element) return;
+
+            const exportPdfBtn = document.getElementById('exportPdfBtn');
+            const exportExcelBtn = document.getElementById('exportExcelBtn');
+            
+            // 暫時隱藏按鈕避免出現在 PDF 中
+            if (exportPdfBtn) exportPdfBtn.style.display = 'none';
+            if (exportExcelBtn) exportExcelBtn.style.display = 'none';
+
+            const opt = {
+                margin:       [15, 15, 15, 15],
+                filename:     `J.Law_GEMINI_Travel_Planner_${new Date().toISOString().slice(0,10)}.pdf`,
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, useCORS: true, logging: false, windowWidth: 1024, scrollY: 0 },
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
+                pagebreak:    { mode: ['css', 'legacy'], avoid: ['.break-inside-avoid', 'h3', 'h4', 'li'] }
+            };
+
+            html2pdf().set(opt).from(element).save().then(() => {
+                // 恢復按鈕顯示
+                if (exportPdfBtn) exportPdfBtn.style.display = '';
+                if (exportExcelBtn) exportExcelBtn.style.display = '';
+                showToast('已成功匯出 PDF 行程表！');
+            }).catch(err => {
+                console.error('Export PDF error:', err);
+                if (exportPdfBtn) exportPdfBtn.style.display = '';
+                if (exportExcelBtn) exportExcelBtn.style.display = '';
+                showToast('PDF 匯出失敗，可直接選擇瀏覽器選單「列印 -> 另存為 PDF」。', 'error');
+            });
+        }
+    </script>
+</body>
+</html>
