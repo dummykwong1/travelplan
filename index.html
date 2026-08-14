@@ -1,20 +1,21 @@
 <!DOCTYPE html>
 <html lang="zh-TW" class="light">
 <head>
-<link rel="manifest" href="manifest.json" />
-<meta name="theme-color" content="#18181b" />
-<meta name="apple-mobile-web-app-capable" content="yes" />
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-<meta name="apple-mobile-web-app-title" content="Kumamon 記帳" />
-<link rel="apple-touch-icon" href="icon-192.png" />
-    
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Kumamon 記帳</title>
+    <meta name="description" content="Kumamon 記帳 — 簡單好用的收支記錄">
+    <meta name="theme-color" content="#18181b" media="(prefers-color-scheme: dark)">
+    <meta name="theme-color" content="#fafafa" media="(prefers-color-scheme: light)">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Kumamon 記帳">
+    <meta name="mobile-web-app-capable" content="yes">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
 
-
-
-    
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -1484,6 +1485,31 @@
 
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
+    </script>
+
+    <script>
+        // 註冊 Service Worker（PWA 離線支援）
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function () {
+                navigator.serviceWorker.register('./sw.js', { scope: './' })
+                    .then(function (reg) {
+                        console.info('[Kumamon PWA] Service Worker 已註冊', reg.scope);
+                        // 有新版本時提示（可選）
+                        reg.addEventListener('updatefound', function () {
+                            const nw = reg.installing;
+                            if (!nw) return;
+                            nw.addEventListener('statechange', function () {
+                                if (nw.state === 'installed' && navigator.serviceWorker.controller) {
+                                    console.info('[Kumamon PWA] 有新版本可用，重新整理即可更新');
+                                }
+                            });
+                        });
+                    })
+                    .catch(function (err) {
+                        console.warn('[Kumamon PWA] Service Worker 註冊失敗', err);
+                    });
+            });
+        }
     </script>
 </body>
 </html>
