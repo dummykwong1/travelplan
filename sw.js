@@ -2,7 +2,7 @@
  * 策略：App Shell 預快取 + CDN Cache First；同源 Network First
  * 記帳資料在 localStorage，離線可正常使用
  */
-const CACHE_VERSION = 'kumamon-v1';
+const CACHE_VERSION = 'kumamon-v2';
 const SHELL_CACHE = CACHE_VERSION + '-shell';
 const CDN_CACHE = CACHE_VERSION + '-cdn';
 
