@@ -1144,64 +1144,26 @@
                 }
             };
 
-            // 系統原生分享（iOS / Android 分享選單 → 檔案、iCloud、Drive、AirDrop 等）
+            // 系統原生分享：只分享 JSON 備份（iOS / Android → 檔案、iCloud、Drive 等）
             const handleShareToCloud = async () => {
                 try {
-                    const embedded = {
+                    const dateStr = new Date().toISOString().split('T')[0];
+                    const payload = {
                         transactions,
                         settings,
                         categories,
                         theme,
-                        exportedAt: new Date().toISOString()
+                        exportedAt: new Date().toISOString(),
+                        app: 'Kumamon 記帳'
                     };
-                    const dataJson = JSON.stringify(embedded)
-                        .replace(/</g, '\\u003c')
-                        .replace(/\u2028/g, '\\u2028')
-                        .replace(/\u2029/g, '\\u2029');
-
-                    const newScriptBody =
-                        '\n        // __EMBEDDED_DATA_START__\n' +
-                        '        window.__EMBEDDED_DATA__ = ' + dataJson + ';\n' +
-                        '        // __EMBEDDED_DATA_END__\n    ';
-
-                    let holder = document.getElementById('__embedded_data_holder__');
-                    let originalText = null;
-                    if (holder) {
-                        originalText = holder.textContent;
-                        holder.textContent = newScriptBody;
-                    }
-
-                    let htmlContent = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
-
-                    if (holder && originalText !== null) {
-                        holder.textContent = originalText;
-                    }
-
-                    // 若序列化失敗，改用 JSON 檔分享
-                    const dateStr = new Date().toISOString().split('T')[0];
-                    const canShareFiles = typeof navigator.share === 'function' && typeof navigator.canShare === 'function';
-
-                    // 優先分享含資料的 HTML；不行再分享 JSON
-                    const htmlFile = new File(
-                        [htmlContent],
-                        'Kumamon_記帳_含資料_' + dateStr + '.html',
-                        { type: 'text/html' }
-                    );
+                    const jsonStr = JSON.stringify(payload, null, 2);
                     const jsonFile = new File(
-                        [JSON.stringify({ transactions, settings, categories, theme, exportedAt: new Date().toISOString() }, null, 2)],
+                        [jsonStr],
                         'Kumamon_記帳_' + dateStr + '.json',
                         { type: 'application/json' }
                     );
 
-                    if (canShareFiles && navigator.canShare({ files: [htmlFile] })) {
-                        await navigator.share({
-                            files: [htmlFile],
-                            title: 'Kumamon 記帳備份',
-                            text: '共 ' + transactions.length + ' 筆紀錄 · ' + dateStr
-                        });
-                        showToast('已開啟系統分享');
-                        return;
-                    }
+                    const canShareFiles = typeof navigator.share === 'function' && typeof navigator.canShare === 'function';
                     if (canShareFiles && navigator.canShare({ files: [jsonFile] })) {
                         await navigator.share({
                             files: [jsonFile],
@@ -1211,20 +1173,22 @@
                         showToast('已開啟系統分享（JSON）');
                         return;
                     }
-                    // 僅支援文字分享（較少見）
+                    // 不支援檔案分享：改為本機下載 JSON
                     if (typeof navigator.share === 'function') {
-                        await navigator.share({
-                            title: 'Kumamon 記帳備份',
-                            text: '共 ' + transactions.length + ' 筆紀錄。請改用「匯出完整 HTML」下載後手動上傳雲端。'
-                        });
-                        showToast('已開啟系統分享');
-                        return;
+                        try {
+                            await navigator.share({
+                                title: 'Kumamon 記帳備份',
+                                text: '共 ' + transactions.length + ' 筆紀錄（' + dateStr + '）。此裝置無法直接分享檔案，請改用匯出 JSON。'
+                            });
+                            showToast('此裝置無法分享檔案，請用匯出 JSON');
+                            return;
+                        } catch (e) {
+                            if (e && (e.name === 'AbortError' || e.name === 'NotAllowedError')) return;
+                        }
                     }
-                    // 桌面或不支援：改下載 HTML
-                    showToast('此裝置不支援系統分享，改為下載檔案');
-                    handleExportHtml();
+                    handleExportJson();
+                    showToast('已改為下載 JSON');
                 } catch (e) {
-                    // 使用者取消分享不顯示錯誤
                     if (e && (e.name === 'AbortError' || e.name === 'NotAllowedError')) return;
                     console.error(e);
                     showToast('分享失敗：' + (e && e.message ? e.message : '未知錯誤'), 'error');
@@ -1293,7 +1257,7 @@
                                 <button onClick={handleImportClick} title="匯入 JSON" aria-label="匯入 JSON" className="p-2 text-zinc-500 hover:text-zinc-900 dark:hover:text-white rounded-lg transition-colors"><Icons.Import /></button>
                                 <input type="file" accept=".json" className="hidden" ref={fileInputRef} onChange={handleFileChange} />
                                 <button onClick={handleExportHtml} title="匯出完整 HTML（含所有紀錄）" aria-label="匯出完整 HTML" className="p-2 text-zinc-500 hover:text-zinc-900 dark:hover:text-white rounded-lg transition-colors"><Icons.FileDown /></button>
-                                <button onClick={handleShareToCloud} title="分享至雲端（系統分享：檔案 / iCloud / Drive）" aria-label="系統分享匯出至雲端" className="p-2 text-zinc-500 hover:text-zinc-900 dark:hover:text-white rounded-lg transition-colors"><Icons.Share /></button>
+                                <button onClick={handleShareToCloud} title="分享 JSON 至雲端（檔案 / iCloud / Drive）" aria-label="分享 JSON 至雲端" className="p-2 text-zinc-500 hover:text-zinc-900 dark:hover:text-white rounded-lg transition-colors"><Icons.Share /></button>
                                 <div className="w-px h-4 bg-zinc-300 dark:bg-zinc-700 mx-1"></div>
                                 <button onClick={() => setIsSettingsOpen(true)} title="設定" aria-label="設定" className="p-2 text-zinc-500 hover:text-zinc-900 dark:hover:text-white rounded-lg transition-colors"><Icons.Settings /></button>
                                 <button onClick={handleClearAll} title="清空資料" aria-label="清空所有資料" className="p-2 text-zinc-500 hover:text-red-600 dark:hover:text-red-400 rounded-lg transition-colors"><Icons.Clear /></button>
